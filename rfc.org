@@ -21,7 +21,7 @@
 ** Glossary
 
    - /the wiki/: the files in a git repo that constitute the town's wiki content. accessible by command line or web.
-   - /~wiki~/: the ~wiki~ command, used locally to work on the wiki and publish changes
+   - ~wiki~: the ~wiki~ command, used locally to work on the wiki and publish changes
    - /compiled/: a purely html version of the wiki content served through a web interface
    - /source/: the raw files of the wiki in various formats (html, markdown, plaintext)
 
