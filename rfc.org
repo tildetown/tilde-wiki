@@ -1,7 +1,7 @@
 * tilde-wiki RFC
 
 | Author         | [[https://tilde.town/~vilmibm][~vilmibm]]         |
-| Status         | in review        |
+| Status         | accepted         |
 | Date Submitted | <2017-08-28 Mon> |
 
 ** Background
@@ -22,8 +22,8 @@
 
    - /the wiki/: the files in a git repo that constitute the town's wiki content. accessible by command line or web.
    - ~wiki~: the ~wiki~ command, used locally to work on the wiki and publish changes
-   - /compiled/: a purely html version of the wiki content served through a web interface
-   - /source/: the raw files of the wiki in various formats (html, markdown, plaintext)
+   - ~tildetown/wiki~: a github repo for storing the content of our wiki
+   - ~tildetown/tilde-wiki~: a github repo for storing the ~wiki~ command
 
 ** Proposal
 
@@ -31,7 +31,6 @@
    - the url tilde.town/wiki, configured at nginx level to serve system path /wiki/compiled
    - Deleting the wiki user and setting a redirect in nginx from /~wiki to /wiki
    - a ~wiki~ command used for initializing, adding to, and publishing the wiki
-   - a convention of symlinking from ~/wiki/compiled to ~/public_html/wiki so people can preview their edits
 
 ** Wiki Layout
 
@@ -41,6 +40,7 @@
    /wiki
    |- .git/
    |- .gitignore
+   |- wiki-githooks
    |- src/
    |-- toc.md
    |-- header.md
@@ -53,15 +53,20 @@
    |------ vim.md
    |------ ed.txt
    |------ nano.html
-   |- compiled/
-   |-- index.html
-   |-- new_user.html
-   |-- ssh.html
-   |-- editors/
-   |---- vim.html
-   |---- ed.html
-   |---- nano.html
    #+END_EXAMPLE
+
+After a ~wiki publish~, the resulting site structure will look like this:
+
+#+BEGIN_EXAMPLE
+  /var/www/tilde.town/html/wiki/
+  |- index.html
+  |- new_user.html
+  |- ssh.html
+  |- editors/
+  |-- ed.html
+  |-- nano.html
+  |-- vim.html
+#+END_EXAMPLE
 
 ** wiki Command
 
@@ -80,20 +85,23 @@
      - prints next steps
 **** preview
      - commits working tree
-     - compiles wiki
-     - if it doesn't exist, creates symlink ~/public_html/wiki pointing at ~/wiki/compiled
-     - prints link to ~user/wiki/
+     - compiles wiki to ~/~/public_html/wiki~
+     - prints link to https://tilde.town/~user/wiki/
 **** publish
      - commits working tree
      - attempts to pull from origin
        - if this fails, reports on the failure and says to fall back to ~git~ or ask for help
        - if this succeeds, pushes to origin
+     - compiles all source files and outputs to ~/var/www/tilde.town/wiki~
 **** get <path>
      - given a valid wiki path, opens it in w3m
      - if no path, suggests creating it with ~$EDITOR~
 **** reset
      - prompts y/N
      - ~git fetch origin && git reset --hard origin~
+
+    NB: preview and publish both audit all links in changed files for absolute
+    links to the wiki and error, explaining relative links.
 
 ** Web Presentation
 
@@ -121,10 +129,11 @@
    I'd appreciate feedback on these questions (in addition to general feedback).
 
     1. The ~compiled/~ directory is ignored by git, but compiled both locally and remotely. 
-       Does this make sense? Should it not live in the folder at all? 
-    2. is ~/wiki/src/articles/~ too deep of a path? is it cumbersome? i like that it is 
+       Does this make sense? Should it not live in the folder at all?
+      - After discussing with \~datagrok, I've decided to target directories outside the repo for compilation.
+    3. is ~/wiki/src/articles/~ too deep of a path? is it cumbersome? i like that it is 
        explicit and i have a policy of erring on the side of explicitness.
-    3. Should the ~wiki~ command be implemented using Python's ~subprocess~ modules to call
+    4. Should the ~wiki~ command be implemented using Python's ~subprocess~ modules to call
        out to ~git~ or use something like ~PyGit2~ or ~GitPython~?
 
 ** Future Improvements
