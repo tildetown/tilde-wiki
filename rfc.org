@@ -1,9 +1,8 @@
 * tilde-wiki RFC
 
-Author: [[https://tilde.town/~vilmibm][~vilmibm]]
-Status: in review
-Date submitted: <2017-08-28 Mon>
-
+| Author         | [[https://tilde.town/~vilmibm][~vilmibm]]         |
+| Status         | in review        |
+| Date Submitted | <2017-08-28 Mon> |
 
 ** Background
 
@@ -66,11 +65,12 @@ Date submitted: <2017-08-28 Mon>
 
 ** wiki Command
 
-   The ~wiki~ command has 3 principles:
+   The ~wiki~ command has 4 principles:
 
    1. ~wiki~ should complement, not replace, ~git~
    2. ~wiki~ subcommands take actions that can be easily summarized in a step-by-step way
    3. ~wiki~ should be fully documented both at rest (manual page) and live (-h, usage info)
+   4. as needed, ~wiki~ should print human readable and informative errors.
 
 *** Subcommands
 
