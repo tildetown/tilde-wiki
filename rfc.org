@@ -135,3 +135,5 @@
    - modify the ~wiki get <path>~ command to act as a local flavor replacement
      of ~man~. This might look like a different compilation "target" distinct
      from compiling HTML for the web.
+   - An ~admin~ subcommand with subsubcommands that can start a tilde-style wiki
+     at an arbitrary path. For now, the initial seeding of ~/wiki~ is all manual.
