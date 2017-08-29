@@ -1,0 +1,19 @@
+* tilde-wiki
+
+/being a small tool for managing a wiki on a social unix server/
+
+This is a new project. It's a formalization of the strange 777 /home/wiki user
+that has existed on [[https://tilde.town][tilde.town]] since time immemorial.
+
+You can think of this project as a very special-cased static site generator with
+as few features as possible.
+
+For now, check out the [[https://github.com/tildetown/tilde-wiki/blob/master/rfc.org][rfc]].
+
+* author
+
+[[https://tilde.town/~vilmibm][~vilmibm]]
+
+* license
+
+GPLv3, u kno it
