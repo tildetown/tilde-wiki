@@ -1,6 +1,9 @@
 """TODO"""
+import os
 import sys
 from os.path import expanduser
+from os.path import exists as path_exists
+from os.path import join as path_join
 
 import click
 import pygit2
@@ -18,8 +21,32 @@ PATH_TYPE_KWARGS = dict(
     writable=True,
     readable=True,
     file_okay=False,
-    dir_okay=True,
-)
+    dir_okay=True)
+
+class GitRepo(Path):
+    name = 'git repository'
+
+    def convert(self, value, param, ctx):
+        path = super().convert(value, param, ctx)
+        if not path_exists(path_join(path, '.git')):
+            self.fail('No .git directory found in {}'.format(path))
+
+        return path
+
+
+class WikiRepo(GitRepo):
+    name = 'wiki repository'
+
+    def convert(self, value, param, ctx):
+        path = super().convert(value, param, ctx)
+
+        if not path_exists(path_join(path, 'src/articles')):
+            self.fail(
+                '{} does not appear to be a wiki repository; missing src/articles.'.format(
+                path))
+
+        return path
+
 
 class Config:
     def __init__(self):
@@ -44,22 +71,22 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
 @click.option('--local-repo-path',
               default=LOCAL_REPOSITORY_PATH,
               help='Path to shared wiki git repository.',
-              type=Path(**PATH_TYPE_KWARGS))
+              type=WikiRepo(**PATH_TYPE_KWARGS))
 @click.option('--repo-path',
               default=REPOSITORY_PATH,
               help='Path to your clone of the shared git repository.',
-              type=Path(**PATH_TYPE_KWARGS))
+              type=WikiRepo(**PATH_TYPE_KWARGS))
 @pass_config
 def main(config, site_name, publish_path, preview_path,
          local_repo_path, repo_path):
+    # TODO click does not appear to call expanduser on things. it'd be nice to
+    # opt into that with the Path type. Should click be patched? Or should we
+    # use a custom Path type?
     config.site_name = site_name
     config.publish_path = publish_path
     config.preview_path = preview_path
     config.local_repo_path = local_repo_path
     config.repo_path = repo_path
-
-    sys.exit(0)
-
 
 @main.command()
 @pass_config
@@ -69,6 +96,7 @@ def init(config):
 @main.command()
 @pass_config
 def preview(config):
+    click.echo('SUP')
     raise NotImplementedError()
 
 @main.command()
