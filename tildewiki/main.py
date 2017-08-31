@@ -20,6 +20,9 @@ LOCAL_REPOSITORY_PATH = expanduser('~/wiki')
 REPOSITORY_PATH = '/wiki'
 
 DOUBLE_NEWLINE_RE = re.compile(r'\n\n', flags=re.MULTILINE|re.DOTALL)
+HEADER_TITLE_RE = re.compile(r'<h([12])>(.*?)</h\1>')
+TITLE_RE = re.compile(r'<title>.*?</title>')
+
 DEFAULT_PATH_KWARGS = dict(
     exists=True,
     writable=True,
@@ -223,10 +226,23 @@ def compile_source_file(source_file_path, header_content, footer_content):
 
     content = compiler(source_file_path)
 
-    # TODO extract title from content; will probably mean not just blindly
-    # taking a header_content
+    title = extract_title(content)
+    if title is not None:
+        header_content = re.sub(
+            TITLE_RE,
+            '<title>{}</title>'.format(title),
+            header_content)
 
     return '{}\n{}\n{}'.format(header_content, content, footer_content)
+
+def extract_title(content):
+    """Given a string of page content, look for a header in the first line.
+    Returns it if found; returns None otherwise."""
+    first_line = content.split('\n')[0]
+    matches = re.match(HEADER_TITLE_RE, first_line)
+    if matches is not None:
+        return matches.groups()[1]
+    return None
 
 def compile_markdown(source_file_path):
     return markdown(
