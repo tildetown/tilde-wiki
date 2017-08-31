@@ -173,7 +173,8 @@ def compile_wiki(source_path, dest_path):
     # TODO progress bar
     # TODO recursively delete dest_path (maybe after gzipping, backing up)
     # TODO lockfile on dest_path
-    # TODO pickup links and publish toc.html
+    # TODO pickup links and generate toc.html
+    # TODO put useful metadata in footer
 
     header_content = compile_markdown(path_join(source_path, 'src/header.md'))
     footer_content = compile_markdown(path_join(source_path, 'src/footer.md'))
@@ -181,8 +182,6 @@ def compile_wiki(source_path, dest_path):
     articles_root = path_join(source_path, 'src/articles')
 
     for root, dirs, files in os.walk(articles_root):
-        # given root, i need to "diff" it against articles_root to get whatever
-        # point i should be at in preview_root.
         current_suffix = root.replace(articles_root, '')
         if current_suffix and current_suffix[0] == '/':
             current_suffix = current_suffix[1:]
