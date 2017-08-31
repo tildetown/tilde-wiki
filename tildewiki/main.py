@@ -44,6 +44,7 @@ class WikiRepo(GitRepo):
     def convert(self, value, param, ctx):
         path = super().convert(value, param, ctx)
 
+        # TODO check for header.md and footer.md
         if not path_exists(path_join(path, 'src/articles')):
             self.fail(
                 '{} does not appear to be a wiki repository; missing src/articles.'.format(
@@ -169,6 +170,10 @@ def compile_wiki(source_path, dest_path):
     # TODO progress bar
     # TODO recursively delete dest_path (maybe after gzipping, backing up)
     # TODO lockfile on dest_path
+    # TODO pickup links and publish toc.html
+
+    header_content = compile_markdown(path_join(source_path, 'src/header.md'))
+    footer_content = compile_markdown(path_join(source_path, 'src/footer.md'))
 
     articles_root = path_join(source_path, 'src/articles')
 
@@ -185,7 +190,10 @@ def compile_wiki(source_path, dest_path):
 
         for source_filename in files:
             source_file_path = path_join(root, source_filename)
-            output = compile_source_file(source_file_path)
+            output = compile_source_file(
+                source_file_path,
+                header_content,
+                footer_content)
             dest_filename = source_filename.split('.')[0] + '.html'
             with open(path_join(preview_root, dest_filename), 'w') as f:
                 f.write(output)
@@ -196,7 +204,7 @@ def slurp(file_path):
         content = f.read()
     return content
 
-def compile_source_file(source_file_path):
+def compile_source_file(source_file_path, header_content, footer_content):
     if not os.path.isabs(source_file_path):
         raise ValueError(
             '{} is not an absolute path.'.format(source_file_path))
@@ -215,10 +223,10 @@ def compile_source_file(source_file_path):
 
     content = compiler(source_file_path)
 
-    # TODO wrap content with header/footer
-    # TODO regenerate sitemap? might be error in rfc here
+    # TODO extract title from content; will probably mean not just blindly
+    # taking a header_content
 
-    return content
+    return '{}\n{}\n{}'.format(header_content, content, footer_content)
 
 def compile_markdown(source_file_path):
     return markdown(
