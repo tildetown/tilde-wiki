@@ -113,9 +113,12 @@ def init(config, local_repo_path, preview_path):
     pygit2.clone_repository(config.repo_path, local_repo_path)
     click.echo('Creating {}...'.format(preview_path))
     os.makedirs(preview_path)
-    click.echo('TODO once we have compliation, this will compile')
+    click.echo('Compiling wiki preview for the first time...')
+    _preview(config, preview_path, local_repo_path)
     click.echo('~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~')
-    click.echo("Congrats, you are ready to contribute to {}'s wiki!")
+    click.echo("Congrats, you are ready to contribute to {}'s wiki!".format(
+        config.site_name
+    ))
 
 @main.command()
 @click.option('--local-repo-path',
@@ -132,8 +135,12 @@ def preview(config, preview_path, local_repo_path):
     click.confirm(
         preview_prompt.format(preview_path),
         abort=True)
+    _preview(config, preview_path, local_repo_path)
+
+def _preview(config, preview_path, local_repo_path):
     compile_wiki(local_repo_path, preview_path)
-    # TODO print some stuff about what just happend
+    click.echo('Your wiki preview is ready! navigate to ~{}/wiki'.format(
+        os.getlogin()))
 
 @main.command()
 @click.option('--local-repo-path',
