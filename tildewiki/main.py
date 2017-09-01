@@ -173,7 +173,6 @@ def compile_wiki(source_path, dest_path):
     # TODO progress bar
     # TODO recursively delete dest_path (maybe after gzipping, backing up)
     # TODO lockfile on dest_path
-    # TODO pickup links and generate toc.html
     # TODO put useful metadata in footer
 
     header_content = compile_markdown(path_join(source_path, 'src/header.md'))
@@ -181,11 +180,14 @@ def compile_wiki(source_path, dest_path):
 
     articles_root = path_join(source_path, 'src/articles')
 
+    toc_content = '{}\n<ul>'.format(update_title(header_content, 'table of contents'))
+
     for root, dirs, files in os.walk(articles_root):
         current_suffix = root.replace(articles_root, '')
         if current_suffix and current_suffix[0] == '/':
             current_suffix = current_suffix[1:]
         preview_root = path_join(dest_path, current_suffix)
+
 
         for directory in dirs:
             os.mkdir(path_join(preview_root, directory))
@@ -197,8 +199,16 @@ def compile_wiki(source_path, dest_path):
                 header_content,
                 footer_content)
             dest_filename = source_filename.split('.')[0] + '.html'
+            toc_content += '<li><a href="{}">{}</a></li>\n'.format(
+                path_join(current_suffix, dest_filename),
+                dest_filename.split('.')[0])
             with open(path_join(preview_root, dest_filename), 'w') as f:
                 f.write(output)
+
+    toc_content += '\n</ul>'
+    with open(path_join(dest_path, 'toc.html'), 'w') as f:
+        f.write(toc_content)
+        f.write(footer_content)
 
 def slurp(file_path):
     content = None
@@ -227,12 +237,15 @@ def compile_source_file(source_file_path, header_content, footer_content):
 
     title = extract_title(content)
     if title is not None:
-        header_content = re.sub(
-            TITLE_RE,
-            '<title>{}</title>'.format(title),
-            header_content)
+        header_content = update_title(header_content, title)
 
     return '{}\n{}\n{}'.format(header_content, content, footer_content)
+
+def update_title(content, title):
+    """Given a chunk of HTML, finds, updates, and returns the title element to
+    be the given title. If there is no title element, the content is returned
+    unmodified."""
+    return re.sub(TITLE_RE, '<title>{}</title>'.format(title), content)
 
 def extract_title(content):
     """Given a string of page content, look for a header in the first line.
