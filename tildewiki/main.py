@@ -7,11 +7,17 @@ from os.path import join as path_join
 
 import click
 import pygit2
+from pygit2 import Repository
 from click import ClickException
 from click.types import Path
 
 from .compilation import (
     compile_wiki
+)
+
+from .git_service import (
+    make_commit,
+    create_repo
 )
 
 # TODO support reading from env
@@ -61,6 +67,11 @@ class Config:
         self.preview_path = PREVIEW_PATH
         self.local_repo_path = LOCAL_REPOSITORY_PATH
         self.repo_path = REPOSITORY_PATH
+        self.author_name = os.environ.get('LOGNAME')
+
+    @property
+    def author_email(self):
+        return '{}@{}'.format(self.author_name, self.site_name)
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
 
@@ -72,7 +83,7 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
               type=Path(**DEFAULT_PATH_KWARGS))
 @click.option('--repo-path',
               default=REPOSITORY_PATH,
-              help='Path to your clone of the shared git repository.',
+              help='Path to the shared wiki repository.',
               type=WikiRepo(**DEFAULT_PATH_KWARGS))
 @pass_config
 def main(config, site_name, publish_path, repo_path):
@@ -84,14 +95,10 @@ def main(config, site_name, publish_path, repo_path):
     config.repo_path = repo_path
 
 @main.command()
-@click.option('--local-repo-path',
-              default=LOCAL_REPOSITORY_PATH,
-              help='Path to shared wiki git repository.',
-              type=Path(file_okay=False))
-@click.option('--preview-path',
-              default=PREVIEW_PATH,
-              help='Local path to wiki for previewing.',
-              type=Path(file_okay=False))
+@click.option('--local-repo-path', default=LOCAL_REPOSITORY_PATH,
+              help='Path to shared wiki git repository.', type=Path(file_okay=False))
+@click.option('--preview-path', default=PREVIEW_PATH,
+              help='Local path to wiki for previewing.', type=Path(file_okay=False))
 @pass_config
 def init(config, local_repo_path, preview_path):
     """
@@ -109,22 +116,29 @@ def init(config, local_repo_path, preview_path):
         raise ClickException(
             '{} already exists. Have you already run wiki init?'.format(
                 preview_path))
+
     click.echo('Cloning {} to {}...'.format(config.repo_path, local_repo_path))
-    pygit2.clone_repository(config.repo_path, local_repo_path)
+    create_repo(
+        config.repo_path,
+        config.local_repo_path,
+        config.author_name,
+        config.author_email
+    )
+
     click.echo('Creating {}...'.format(preview_path))
     os.makedirs(preview_path)
+
     click.echo('Compiling wiki preview for the first time...')
     _preview(config, preview_path, local_repo_path)
+
     click.echo('~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~')
     click.echo("Congrats, you are ready to contribute to {}'s wiki!".format(
         config.site_name
     ))
 
 @main.command()
-@click.option('--local-repo-path',
-              default=LOCAL_REPOSITORY_PATH,
-              help='Path to shared wiki git repository.',
-              type=WikiRepo(**DEFAULT_PATH_KWARGS))
+@click.option('--local-repo-path', default=LOCAL_REPOSITORY_PATH,
+              help='Path to local clone of wiki repository.', type=WikiRepo(**DEFAULT_PATH_KWARGS))
 @click.option('--preview-path',
               default=PREVIEW_PATH,
               help='Local path to wiki for previewing.',
@@ -135,20 +149,18 @@ def preview(config, preview_path, local_repo_path):
     click.confirm(
         preview_prompt.format(preview_path),
         abort=True)
+    # TODO actually perform removal
     _preview(config, preview_path, local_repo_path)
 
-def _preview(config, preview_path, local_repo_path):
-    compile_wiki(local_repo_path, preview_path)
-    click.echo('Your wiki preview is ready! navigate to ~{}/wiki'.format(
-        os.getlogin()))
-
 @main.command()
-@click.option('--local-repo-path',
-              default=LOCAL_REPOSITORY_PATH,
-              help='Path to shared wiki git repository.',
-              type=WikiRepo(**DEFAULT_PATH_KWARGS))
+@click.option('--local-repo-path', default=LOCAL_REPOSITORY_PATH,
+              help='Path to local clone of wiki repository.', type=WikiRepo(**DEFAULT_PATH_KWARGS))
 @pass_config
 def publish(config, local_repo_path):
+    # use config.repo_path and config.publish_path
+    make_commit(local_repo_path, config.author_name, config.author_email)
+    # TODO push to repository path
+    # TODO compile from config.repo_path to config.publish_path
     raise NotImplementedError()
 
 @main.command()
@@ -157,10 +169,13 @@ def get(config):
     raise NotImplementedError()
 
 @main.command()
-@click.option('--local-repo-path',
-              default=LOCAL_REPOSITORY_PATH,
-              help='Path to shared wiki git repository.',
-              type=WikiRepo(**DEFAULT_PATH_KWARGS))
+@click.option('--local-repo-path', default=LOCAL_REPOSITORY_PATH,
+              help='Path to shared wiki git repository.', type=WikiRepo(**DEFAULT_PATH_KWARGS))
 @pass_config
 def reset(config, local_repo_path):
     raise NotImplementedError()
+
+def _preview(config, preview_path, local_repo_path):
+    compile_wiki(local_repo_path, preview_path)
+    click.echo('Your wiki preview is ready! navigate to ~{}/wiki'.format(
+        os.environ.get('LOGNAME')))
