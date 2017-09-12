@@ -2,23 +2,22 @@
 import os
 import re
 from os.path import expanduser
-from os.path import exists as path_exists
-from os.path import join as path_join
 
 import click
 import pygit2
-from pygit2 import Repository
 from click import ClickException
 from click.types import Path
+from shutil import rmtree
+
+from .click_types import (
+    WikiRepo
+)
 
 from .compilation import (
     compile_wiki
 )
 
-from .git_service import (
-    make_commit,
-    create_repo
-)
+from . import git_wrapper as git
 
 # TODO support reading from env
 SITE_NAME = 'tilde.town'
@@ -33,32 +32,6 @@ DEFAULT_PATH_KWARGS = dict(
     readable=True,
     file_okay=False,
     dir_okay=True)
-
-class GitRepo(Path):
-    name = 'git repository'
-
-    def convert(self, value, param, ctx):
-        path = super().convert(value, param, ctx)
-        if not path_exists(path_join(path, '.git')):
-            self.fail('No .git directory found in {}'.format(path))
-
-        return path
-
-
-class WikiRepo(GitRepo):
-    name = 'wiki repository'
-
-    def convert(self, value, param, ctx):
-        path = super().convert(value, param, ctx)
-
-        # TODO check for header.md and footer.md
-        if not path_exists(path_join(path, 'src/articles')):
-            self.fail(
-                '{} does not appear to be a wiki repository; missing src/articles.'.format(
-                path))
-
-        return path
-
 
 class Config:
     def __init__(self):
