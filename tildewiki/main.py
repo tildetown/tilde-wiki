@@ -25,6 +25,8 @@ PUBLISH_PATH = '/var/www/{site_name}/wiki'.format(site_name=SITE_NAME)
 PREVIEW_PATH = expanduser('~/public_html/wiki')
 LOCAL_REPOSITORY_PATH = expanduser('~/wiki')
 REPOSITORY_PATH = '/wiki'
+WIPE_PROMPT = 'This will wipe everything at {}. Proceed?'
+LOCK_PATH = '/tmp/tildewiki.lock'
 
 DEFAULT_PATH_KWARGS = dict(
     exists=True,
@@ -80,18 +82,18 @@ def init(config, local_repo_path, preview_path):
       - creates PREVIEW_PATH
       - calls the preview command
     """
-    if path_exists(path_join(local_repo_path)):
+    if os.path.exists(os.path.join(local_repo_path)):
         raise ClickException(
             '{} already exists. Have you already run wiki init?'.format(
                 local_repo_path))
 
-    if path_exists(path_join(preview_path)):
+    if os.path.exists(os.path.join(preview_path)):
         raise ClickException(
             '{} already exists. Have you already run wiki init?'.format(
                 preview_path))
 
     click.echo('Cloning {} to {}...'.format(config.repo_path, local_repo_path))
-    create_repo(
+    git.create_repo(
         config.repo_path,
         config.local_repo_path,
         config.author_name,
@@ -118,11 +120,11 @@ def init(config, local_repo_path, preview_path):
               type=Path(**DEFAULT_PATH_KWARGS))
 @pass_config
 def preview(config, preview_path, local_repo_path):
-    preview_prompt = 'This will wipe everything at {}. Proceed?'
     click.confirm(
-        preview_prompt.format(preview_path),
+        WIPE_PROMPT.format(preview_path),
         abort=True)
-    # TODO actually perform removal
+    rmtree(preview_path)
+    os.makedirs(preview_path)
     _preview(config, preview_path, local_repo_path)
 
 @main.command()
@@ -130,11 +132,44 @@ def preview(config, preview_path, local_repo_path):
               help='Path to local clone of wiki repository.', type=WikiRepo(**DEFAULT_PATH_KWARGS))
 @pass_config
 def publish(config, local_repo_path):
-    # use config.repo_path and config.publish_path
-    make_commit(local_repo_path, config.author_name, config.author_email)
-    # TODO push to repository path
-    # TODO compile from config.repo_path to config.publish_path
-    raise NotImplementedError()
+    if os.path.exists(LOCK_PATH):
+        raise ClickException('The wiki lock file already exists. Seems like someone else is compiling.')
+
+    rm_error_paths = []
+    onerror = lambda f,p,e: rm_error_paths.append(p)
+    error = None
+    lockf = open(LOCK_PATH, 'w')
+    try:
+        click.echo('Committing your changes locally...')
+        git.make_commit(local_repo_path, config.author_name, config.author_email)
+        git.pull_from_origin(local_repo_path)
+
+        click.echo('Pushing your changes...')
+        git.push_all(local_repo_path)
+
+        click.echo('Compiling wiki to {}'.format(config.publish_path))
+        click.confirm(WIPE_PROMPT.format(config.publish_path), abort=True)
+
+        rmtree(config.publish_path, onerror=onerror)
+        if len(rm_error_paths) == 0:
+            os.makedirs(config.publish_path)
+        elif len(rm_error_paths) == 1 and rm_error_paths[0] == config.publish_path:
+            pass
+        else:
+            raise ClickException('Could not remove some paths: {}'.format(rm_error_paths))
+
+        compile_wiki(config.repo_path, config.publish_path)
+    except Exception as e:
+        error = e
+    finally:
+        lockf.close()
+        try:
+            os.remove(LOCK_PATH)
+        except FileNotFoundError:
+            pass
+
+    if error is not None:
+        raise ClickException('Failed publishing wiki. Error: {}'.format(error))
 
 @main.command()
 @pass_config
