@@ -149,6 +149,9 @@ def publish(config, local_repo_path):
         click.echo('Compiling wiki to {}'.format(config.publish_path))
         click.confirm(WIPE_PROMPT.format(config.publish_path), abort=True)
 
+        # TODO there is a showstopping bug here: remaking the publish path
+        # strips all permissions. actually delete the stuff in there, not the
+        # dir itself.
         rmtree(config.publish_path, onerror=onerror)
         if len(rm_error_paths) == 0:
             os.makedirs(config.publish_path)
