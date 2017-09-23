@@ -10,6 +10,30 @@ as few features as possible.
 
 For now, check out the [[https://github.com/tildetown/tilde-wiki/blob/master/rfc.org][rfc]].
 
+* using this tool
+
+this tool is super specific to tilde.town, but more or less adaptable to similar
+environments. if there are things you think should change to make this more
+useful elsewhere, PRs and issues are welcome.
+
+** prequisites
+
+   - a git repo with a top level path ~src/articles~
+   - the files ~src/{footer.md,header.md}~ which contain whatever header and footer content you'd like
+   - everything in ~src/articles~ to be either a markdown (~.md~), html (~.html~), or plain text (~.txt~) file
+   - write privileges for anyone who clones the repo
+   - a ~post-receive~ hook with something like the following:
+     #+BEGIN_SRC bash
+     #!/bin/bash
+     umask 002
+     unset GIT_DIR
+
+     cd /wiki
+     git reset --hard HEAD
+     git log -1 > git-last-log.txt 
+     #+END_SRC
+     (you will want to replace ~/wiki~ with whatever the path to your wiki repo is)
+
 * author
 
 [[https://tilde.town/~vilmibm][~vilmibm]]
