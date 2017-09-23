@@ -20,7 +20,7 @@ def create_repo(to_clone, local_path, author_name, author_email):
 def dirty(repo_path):
     # TODO figure out how to do with GitPython
     repo = pygit2.Repository(repo_path)
-    return repo.status() == {}
+    return repo.status() != {}
 
 def make_commit(repo_path, author_name, author_email):
     """Given a path to a repository, adds everything and commits it. If there
