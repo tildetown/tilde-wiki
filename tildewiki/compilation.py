@@ -45,7 +45,7 @@ def compile_wiki(source_path: str, dest_path: str) -> None:
             dest_filename = source_filename.split('.')[0] + '.html'
             toc_content += '<li><a href="{}">{}</a></li>\n'.format(
                 path_join(current_suffix, dest_filename),
-                dest_filename.split('.')[0])
+                path_join(current_suffix,dest_filename.split('.')[0]))
             with open(path_join(preview_root, dest_filename), 'w') as f:
                 f.write(output)
 
