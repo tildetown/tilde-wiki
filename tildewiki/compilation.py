@@ -2,6 +2,7 @@ import os
 import re
 from datetime import datetime
 from os.path import join as path_join
+from shutil import copyfile
 
 from markdown import markdown
 
@@ -23,6 +24,8 @@ def compile_wiki(source_path: str, dest_path: str) -> None:
     header_content = compile_markdown(path_join(source_path, 'src/header.md'))
     footer_content = last_compiled + compile_markdown(path_join(source_path, 'src/footer.md'))
 
+    # TODO fix any links in header/footer to work with preview path
+
     articles_root = path_join(source_path, 'src/articles')
 
     toc_content = '{}\n<ul>'.format(update_title(header_content, 'table of contents'))
@@ -31,6 +34,7 @@ def compile_wiki(source_path: str, dest_path: str) -> None:
         current_suffix = root.replace(articles_root, '')
         if current_suffix and current_suffix[0] == '/':
             current_suffix = current_suffix[1:]
+        # TODO this is a bad var name since it might be publish path
         preview_root = path_join(dest_path, current_suffix)
 
         for directory in dirs:
@@ -38,16 +42,20 @@ def compile_wiki(source_path: str, dest_path: str) -> None:
 
         for source_filename in files:
             source_file_path = path_join(root, source_filename)
-            output = compile_source_file(
-                source_file_path,
-                header_content,
-                footer_content)
-            dest_filename = source_filename.split('.')[0] + '.html'
-            toc_content += '<li><a href="{}">{}</a></li>\n'.format(
-                path_join(current_suffix, dest_filename),
-                path_join(current_suffix,dest_filename.split('.')[0]))
-            with open(path_join(preview_root, dest_filename), 'w') as f:
-                f.write(output)
+            # TODO this is really ugly; consider just copying anything not in approved extensions
+            if source_file_path.endswith('.css'):
+                copyfile(source_file_path, path_join(preview_root, source_filename))
+            else:
+                output = compile_source_file(
+                    source_file_path,
+                    header_content,
+                    footer_content)
+                dest_filename = source_filename.split('.')[0] + '.html'
+                toc_content += '<li><a href="{}">{}</a></li>\n'.format(
+                    path_join(current_suffix, dest_filename),
+                    path_join(current_suffix,dest_filename.split('.')[0]))
+                with open(path_join(preview_root, dest_filename), 'w') as f:
+                    f.write(output)
 
     toc_content += '\n</ul>'
     with open(path_join(dest_path, 'toc.html'), 'w') as f:
