@@ -18,8 +18,6 @@ def compile_wiki(source_path: str, dest_path: str) -> None:
     Be absolutely sure you know what you are doing when you call this ^_^
     """
     # TODO progress bar
-    # TODO recursively delete dest_path (maybe after gzipping, backing up)
-    # TODO lockfile on dest_path
     # TODO put useful metadata in footer
 
     header_content = compile_markdown(path_join(source_path, 'src/header.md'))
@@ -34,7 +32,6 @@ def compile_wiki(source_path: str, dest_path: str) -> None:
         if current_suffix and current_suffix[0] == '/':
             current_suffix = current_suffix[1:]
         preview_root = path_join(dest_path, current_suffix)
-
 
         for directory in dirs:
             os.mkdir(path_join(preview_root, directory))

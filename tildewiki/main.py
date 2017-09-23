@@ -159,6 +159,8 @@ def publish(config, local_repo_path):
             raise ClickException('Could not remove some paths: {}'.format(rm_error_paths))
 
         compile_wiki(config.repo_path, config.publish_path)
+    except ClickException:
+        raise
     except Exception as e:
         error = e
     finally:
