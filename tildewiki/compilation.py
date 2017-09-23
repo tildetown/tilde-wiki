@@ -1,5 +1,6 @@
 import os
 import re
+from datetime import datetime
 from os.path import join as path_join
 
 from markdown import markdown
@@ -17,11 +18,10 @@ def compile_wiki(source_path: str, dest_path: str) -> None:
 
     Be absolutely sure you know what you are doing when you call this ^_^
     """
-    # TODO progress bar
-    # TODO put useful metadata in footer
+    last_compiled = '<p><em>last compiled: {}</em></p>'.format(datetime.utcnow())
 
     header_content = compile_markdown(path_join(source_path, 'src/header.md'))
-    footer_content = compile_markdown(path_join(source_path, 'src/footer.md'))
+    footer_content = last_compiled + compile_markdown(path_join(source_path, 'src/footer.md'))
 
     articles_root = path_join(source_path, 'src/articles')
 
