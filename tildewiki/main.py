@@ -4,7 +4,7 @@ from os.path import expanduser
 
 import click
 import pygit2
-from click import ClickException
+from click import ClickException, Abort
 from click.types import Path
 from shutil import rmtree
 
@@ -103,7 +103,7 @@ def init(config, local_repo_path, preview_path):
     os.makedirs(preview_path)
 
     click.echo('Compiling wiki preview for the first time...')
-    _preview(config, preview_path, local_repo_path)
+    _preview(preview_path, local_repo_path)
 
     click.echo('~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~')
     click.echo("Congrats, you are ready to contribute to {}'s wiki!".format(
@@ -122,9 +122,8 @@ def preview(config, preview_path, local_repo_path):
     click.confirm(
         WIPE_PROMPT.format(preview_path),
         abort=True)
-    rmtree(preview_path)
-    os.makedirs(preview_path)
-    _preview(config, preview_path, local_repo_path)
+    clear_directory(preview_path)
+    _preview(preview_path, local_repo_path)
 
 @main.command()
 @click.option('--local-repo-path', default=LOCAL_REPOSITORY_PATH,
@@ -148,20 +147,11 @@ def publish(config, local_repo_path):
 
         click.echo('Compiling wiki to {}'.format(config.publish_path))
         click.confirm(WIPE_PROMPT.format(config.publish_path), abort=True)
-
-        # TODO there is a showstopping bug here: remaking the publish path
-        # strips all permissions. actually delete the stuff in there, not the
-        # dir itself.
-        rmtree(config.publish_path, onerror=onerror)
-        if len(rm_error_paths) == 0:
-            os.makedirs(config.publish_path)
-        elif len(rm_error_paths) == 1 and rm_error_paths[0] == config.publish_path:
-            pass
-        else:
-            raise ClickException('Could not remove some paths: {}'.format(rm_error_paths))
-
+        clear_directory(config.publish_path)
         compile_wiki(config.repo_path, config.publish_path)
     except ClickException:
+        raise
+    except Abort:
         raise
     except Exception as e:
         error = e
@@ -187,7 +177,23 @@ def get(config):
 def reset(config, local_repo_path):
     raise NotImplementedError()
 
-def _preview(config, preview_path, local_repo_path):
+def _preview(preview_path, local_repo_path):
     compile_wiki(local_repo_path, preview_path)
     click.echo('Your wiki preview is ready! navigate to ~{}/wiki'.format(
         os.environ.get('LOGNAME')))
+
+def clear_directory(path:str) -> None:
+    """Given a path to a directory, deletes everything in it. Use with
+    caution."""
+    if path in ['', '/', '~', '*']:
+        raise ValueError('"{}" is not a valid path for clearing'.format(path))
+
+    if not os.path.isdir(path):
+        raise ValueError('{} is not a directory'.format(path))
+
+    for root, dirs, files in os.walk(path):
+        for f in files:
+            os.unlink(os.path.join(root, f))
+        for d in dirs:
+            rmtree(os.path.join(root, d))
+
