@@ -3,19 +3,12 @@ import re
 from os.path import expanduser
 
 import click
-import pygit2
 from click import ClickException, Abort
 from click.types import Path
 from shutil import rmtree
 
-from .click_types import (
-    WikiRepo
-)
-
-from .compilation import (
-    compile_wiki
-)
-
+from .click_types import WikiRepo
+from .compilation import compile_wiki
 from . import git_wrapper as git
 
 # TODO support reading from env
