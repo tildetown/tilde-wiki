@@ -52,7 +52,7 @@ def compile_wiki(source_path: str, dest_path: str) -> None:
             source_file_path = os.path.join(source_root, source_filename)
             output = compile_source_file(
                 source_file_path,
-                update_header_links(header_content, depth),
+                header_content,
                 footer_content)
             output = relativize_links(output, depth)
             dest_filename = source_filename.split('.')[0] + '.html'
