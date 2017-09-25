@@ -8,14 +8,14 @@ from markdown import markdown
 DOUBLE_NEWLINE_RE = re.compile(r'\n\n', flags=re.MULTILINE|re.DOTALL)
 HEADER_TITLE_RE = re.compile(r'<h([12])>(.*?)</h\1>')
 TITLE_RE = re.compile(r'<title>.*?</title>')
-LINK_RE = re.compile(r'\/wiki')
+LINK_RE = re.compile(r'href="\/wiki')
 
 def relativize_links(content:str, depth:int) -> str:
     """Given compiled html content, change URLs that start in "/wiki" to be
     relative instead of absolute. Depth indicates how many pairs of dots we
     should use to traverse upward."""
     dots = os.path.join(*['..' for _ in range(depth)])
-    repl = os.path.join(dots, 'wiki')
+    repl = 'href="{}'.format(os.path.join(dots, 'wiki'))
     return re.sub(LINK_RE, repl, content)
 
 def compile_wiki(source_path: str, dest_path: str) -> None:
