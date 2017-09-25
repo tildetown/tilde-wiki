@@ -10,11 +10,13 @@ HEADER_TITLE_RE = re.compile(r'<h([12])>(.*?)</h\1>')
 TITLE_RE = re.compile(r'<title>.*?</title>')
 LINK_RE = re.compile(r'\/wiki')
 
-def update_header_links(header_content:str) -> str:
+def update_header_links(header_content:str, depth:int) -> str:
     """Given compiled header content, change absolute URLs in the header to be
     relative to the root URL. this is a dirty hack to save links during
     preview."""
-    return re.sub(LINK_RE, '../wiki', header_content)
+    dots = os.path.join(*['..' for _ in range(depth)])
+    repl = os.path.join(dots, wiki)
+    return re.sub(LINK_RE, repl, header_content)
 
 def compile_wiki(source_path: str, dest_path: str) -> None:
     """Given a source path (presumably a git repository) and a destination
@@ -27,16 +29,16 @@ def compile_wiki(source_path: str, dest_path: str) -> None:
     """
     last_compiled = '<p><em>last compiled: {}</em></p>'.format(datetime.utcnow())
 
-    header_content = update_header_links(compile_markdown(os.path.join(source_path, 'src/header.md')))
+    header_content = compile_markdown(os.path.join(source_path, 'src/header.md'))
     footer_content = last_compiled + compile_markdown(os.path.join(source_path, 'src/footer.md'))
-
-    # TODO fix any links in header/footer to work with preview path
 
     articles_root = os.path.join(source_path, 'src/articles')
 
     toc_content = '{}\n<ul>'.format(update_title(header_content, 'table of contents'))
 
+    depth = 0
     for source_root, dirs, files in os.walk(articles_root):
+        depth += 1
         current_suffix = source_root.replace(articles_root, '')
         if current_suffix and current_suffix[0] == '/':
             current_suffix = current_suffix[1:]
@@ -50,7 +52,7 @@ def compile_wiki(source_path: str, dest_path: str) -> None:
             source_file_path = os.path.join(source_root, source_filename)
             output = compile_source_file(
                 source_file_path,
-                header_content,
+                update_header_links(header_content, depth),
                 footer_content)
             dest_filename = source_filename.split('.')[0] + '.html'
             toc_content += '<li><a href="{}">{}</a></li>\n'.format(
