@@ -1,6 +1,7 @@
 import os
 import re
 from os.path import expanduser
+import subprocess
 
 import click
 from click import ClickException, Abort
@@ -159,9 +160,19 @@ def publish(config, local_repo_path):
         raise ClickException('Failed publishing wiki. Error: {}'.format(error))
 
 @main.command()
+@click.option('--preview', help='show pages from your local wiki', is_flag=True)
+@click.option('--preview-path', default=PREVIEW_PATH,
+              help='Local path to wiki for previewing.', type=Path(file_okay=False))
+@click.argument('path')
 @pass_config
-def get(config):
-    raise NotImplementedError()
+def get(config, preview, preview_path, path):
+    read_path = config.publish_path
+    if preview:
+        read_path = preview_path
+
+    path = os.path.join(read_path, path) + '.html'
+
+    subprocess.run(['sensible-browser', path])
 
 @main.command()
 @click.option('--local-repo-path', default=LOCAL_REPOSITORY_PATH,
