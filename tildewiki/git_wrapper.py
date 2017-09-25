@@ -11,6 +11,12 @@ import pygit2
 # i want to standardize on gitpython, but gotta figure out the repo status and
 # also do the cloning
 
+def reset_from_origin(repo_path:str) -> None:
+    repo = gitpython.Repo(repo_path)
+    repo.remotes['origin'].fetch()
+    repo.git.reset('--hard', 'origin/master')
+
+
 def create_repo(to_clone, local_path, author_name, author_email):
     # TODO port to GitPython
     repo = pygit2.clone_repository(to_clone, local_path)

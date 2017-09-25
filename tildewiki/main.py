@@ -179,7 +179,8 @@ def get(config, preview, preview_path, path):
               help='Path to shared wiki git repository.', type=WikiRepo(**DEFAULT_PATH_KWARGS))
 @pass_config
 def reset(config, local_repo_path):
-    raise NotImplementedError()
+    click.confirm("This will overwrite any changes you've made locally. Proceed?", abort=True)
+    git.reset_from_origin(local_repo_path)
 
 def _preview(preview_path, local_repo_path):
     compile_wiki(local_repo_path, preview_path)
