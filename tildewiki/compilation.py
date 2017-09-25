@@ -8,6 +8,13 @@ from markdown import markdown
 DOUBLE_NEWLINE_RE = re.compile(r'\n\n', flags=re.MULTILINE|re.DOTALL)
 HEADER_TITLE_RE = re.compile(r'<h([12])>(.*?)</h\1>')
 TITLE_RE = re.compile(r'<title>.*?</title>')
+LINK_RE = re.compile(r'\/wiki')
+
+def update_header_links(header_content:str) -> str:
+    """Given compiled header content, change absolute URLs in the header to be
+    relative to the root URL. this is a dirty hack to save links during
+    preview."""
+    return re.sub(LINK_RE, '../wiki', header_content)
 
 def compile_wiki(source_path: str, dest_path: str) -> None:
     """Given a source path (presumably a git repository) and a destination
@@ -20,7 +27,7 @@ def compile_wiki(source_path: str, dest_path: str) -> None:
     """
     last_compiled = '<p><em>last compiled: {}</em></p>'.format(datetime.utcnow())
 
-    header_content = compile_markdown(os.path.join(source_path, 'src/header.md'))
+    header_content = update_header_links(compile_markdown(os.path.join(source_path, 'src/header.md')))
     footer_content = last_compiled + compile_markdown(os.path.join(source_path, 'src/footer.md'))
 
     # TODO fix any links in header/footer to work with preview path
