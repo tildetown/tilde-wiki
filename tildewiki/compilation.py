@@ -10,13 +10,13 @@ HEADER_TITLE_RE = re.compile(r'<h([12])>(.*?)</h\1>')
 TITLE_RE = re.compile(r'<title>.*?</title>')
 LINK_RE = re.compile(r'\/wiki')
 
-def update_header_links(header_content:str, depth:int) -> str:
-    """Given compiled header content, change absolute URLs in the header to be
-    relative to the root URL. this is a dirty hack to save links during
-    preview."""
+def relativize_links(content:str, depth:int) -> str:
+    """Given compiled html content, change URLs that start in "/wiki" to be
+    relative instead of absolute. Depth indicates how many pairs of dots we
+    should use to traverse upward."""
     dots = os.path.join(*['..' for _ in range(depth)])
     repl = os.path.join(dots, 'wiki')
-    return re.sub(LINK_RE, repl, header_content)
+    return re.sub(LINK_RE, repl, content)
 
 def compile_wiki(source_path: str, dest_path: str) -> None:
     """Given a source path (presumably a git repository) and a destination
@@ -54,6 +54,7 @@ def compile_wiki(source_path: str, dest_path: str) -> None:
                 source_file_path,
                 update_header_links(header_content, depth),
                 footer_content)
+            output = relativize_links(output, depth)
             dest_filename = source_filename.split('.')[0] + '.html'
             toc_content += '<li><a href="{}">{}</a></li>\n'.format(
                 os.path.join(current_suffix, dest_filename),
