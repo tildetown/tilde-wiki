@@ -15,7 +15,7 @@ def update_header_links(header_content:str, depth:int) -> str:
     relative to the root URL. this is a dirty hack to save links during
     preview."""
     dots = os.path.join(*['..' for _ in range(depth)])
-    repl = os.path.join(dots, wiki)
+    repl = os.path.join(dots, 'wiki')
     return re.sub(LINK_RE, repl, header_content)
 
 def compile_wiki(source_path: str, dest_path: str) -> None:
