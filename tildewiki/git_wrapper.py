@@ -1,15 +1,4 @@
 import git as gitpython
-import pygit2
-
-# it's fucking weird to be using two different git libraries, i know.
-# gitpython:
-# - couldn't figure out how to check repo status
-# pygit2:
-# - had trouble with committing after a merge
-# - can't push to local repos
-#
-# i want to standardize on gitpython, but gotta figure out the repo status and
-# also do the cloning
 
 def reset_from_origin(repo_path:str) -> None:
     repo = gitpython.Repo(repo_path)
@@ -18,10 +7,12 @@ def reset_from_origin(repo_path:str) -> None:
 
 
 def create_repo(to_clone, local_path, author_name, author_email):
-    # TODO port to GitPython
-    repo = pygit2.clone_repository(to_clone, local_path)
-    repo.config['user.name'] = author_name
-    repo.config['user.email'] = author_email
+    origin = gitpython.Repo(to_clone)
+    new_repo = origin.clone(local_path)
+    with new_repo.config_writer() as cw:
+        cw.add_section('user')
+        cw.set('user', 'name', author_name)
+        cw.set('user', 'email', author_email)
 
 def dirty(repo_path:str):
     repo = gitpython.Repo(repo_path)
