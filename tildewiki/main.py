@@ -137,7 +137,7 @@ def publish(config, local_repo_path):
         git.pull_from_origin(local_repo_path)
 
         click.echo('Pushing your changes...')
-        git.push_all(local_repo_path)
+        git.push_hard(local_repo_path, config.repo_path)
 
         click.echo('Compiling wiki to {}'.format(config.publish_path))
         click.confirm(WIPE_PROMPT.format(config.publish_path), abort=True)

@@ -26,15 +26,16 @@ def make_commit(repo_path, author_name, author_email):
         return
     repo = gitpython.Repo(repo_path)
     index = repo.index
-
-    index.add([path for (path, _), __ in index.entries.items()])
+    repo.git.add(['--all'])
 
     actor = gitpython.Actor(author_name, author_email)
     index.commit('wiki update', author=actor, committer=actor)
 
-def push_all(repo_path):
-    repo = gitpython.Repo(repo_path)
-    repo.remotes['origin'].push()
+def push_hard(local_repo_path, remote_repo_path):
+    local_repo = gitpython.Repo(local_repo_path)
+    local_repo.remotes['origin'].push()
+    remote = gitpython.Repo(remote_repo_path)
+    remote.git.reset(['--hard', 'HEAD'])
 
 def pull_from_origin(repo_path):
     repo = gitpython.Repo(repo_path)
