@@ -55,6 +55,8 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
               type=WikiRepo(**DEFAULT_PATH_KWARGS))
 @pass_config
 def main(config, site_name, publish_path, repo_path):
+    """This tool helps manage a wiki that exists as a git repository on a
+    social server."""
     # TODO click does not appear to call expanduser on things. it'd be nice to
     # opt into that with the Path type. Should click be patched? Or should we
     # use a custom Path type?
@@ -70,10 +72,7 @@ def main(config, site_name, publish_path, repo_path):
 @pass_config
 def init(config, local_repo_path, preview_path):
     """
-    This command, `wiki init`, does the following:
-      - clones REPOSITORY_PATH to LOCAL_REPOSITORY_PATH
-      - creates PREVIEW_PATH
-      - calls the preview command
+    Initializes a local copy of the shared wiki.
     """
     if os.path.exists(os.path.join(local_repo_path)):
         raise ClickException(
@@ -113,6 +112,7 @@ def init(config, local_repo_path, preview_path):
               type=Path(**DEFAULT_PATH_KWARGS))
 @pass_config
 def preview(config, preview_path, local_repo_path):
+    """Compiles all the files in the local wiki repository."""
     click.confirm(
         WIPE_PROMPT.format(preview_path),
         abort=True)
@@ -124,6 +124,8 @@ def preview(config, preview_path, local_repo_path):
               help='Path to local clone of wiki repository.', type=WikiRepo(**DEFAULT_PATH_KWARGS))
 @pass_config
 def publish(config, local_repo_path):
+    """Commits any local changes, syncs with the shared wiki repository (in
+    both directions), and recompiles the shared wiki."""
     if os.path.exists(LOCK_PATH):
         raise ClickException('The wiki lock file already exists. Seems like someone else is compiling.')
 
@@ -166,6 +168,9 @@ def publish(config, local_repo_path):
 @click.argument('path')
 @pass_config
 def get(config, preview, preview_path, path):
+    """Given a path to a file in the wiki, open it in a browser. Uses
+    sensible-browser. No need to specify the extension; e.g., 'wiki get
+    editors/emacs' will show /wiki/editors/emacs.html in the browser."""
     read_path = config.publish_path
     if preview:
         read_path = preview_path
@@ -182,17 +187,16 @@ def get(config, preview, preview_path, path):
 
     subprocess.run(['sensible-browser', path])
 
-# TODO sync command that:
-# - offers to wipe any local changes or commit them
-# - pulls from origin
-# - pushes to origin
-
 @main.command()
 @click.option('--local-repo-path', default=LOCAL_REPOSITORY_PATH,
               help='Path to shared wiki git repository.', type=WikiRepo(**DEFAULT_PATH_KWARGS))
 @pass_config
-def reset(config, local_repo_path):
-    click.confirm("This will overwrite any changes you've made locally. Proceed?", abort=True)
+def sync(config, local_repo_path):
+    """Syncs a local copy of the wiki with the shared copy. Resets any
+    outstanding changes. If those changes should be kept, publish them
+    first."""
+    if git.dirty(local_repo_path):
+        click.confirm("This will overwrite any changes you've made locally. Proceed?", abort=True)
     git.reset_from_origin(local_repo_path)
 
 def _preview(preview_path, local_repo_path):
