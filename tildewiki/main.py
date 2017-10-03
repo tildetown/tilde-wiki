@@ -170,9 +170,22 @@ def get(config, preview, preview_path, path):
     if preview:
         read_path = preview_path
 
-    path = os.path.join(read_path, path) + '.html'
+    path = os.path.join(read_path, path)
+    if os.path.exists(path)\
+       and os.path.isdir(path)\
+       and os.path.exists(os.path.join(path, 'index.html')):
+        path = os.path.join(path, 'index.html')
+    elif os.path.exists(path + '.html'):
+        path = path + '.html'
+    else:
+        raise ClickException("Couldn't find path {}".format(path))
 
     subprocess.run(['sensible-browser', path])
+
+# TODO sync command that:
+# - offers to wipe any local changes or commit them
+# - pulls from origin
+# - pushes to origin
 
 @main.command()
 @click.option('--local-repo-path', default=LOCAL_REPOSITORY_PATH,
