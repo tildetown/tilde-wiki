@@ -49,6 +49,8 @@ def compile_wiki(source_path: str, dest_path: str) -> None:
             os.mkdir(os.path.join(dest_root, directory))
 
         for source_filename in files:
+            if source_filename.startswith('.'):
+                continue
             source_file_path = os.path.join(source_root, source_filename)
             output = compile_source_file(
                 source_file_path,
