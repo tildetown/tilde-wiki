@@ -145,6 +145,7 @@ def publish(config, local_repo_path):
         click.confirm(WIPE_PROMPT.format(config.publish_path), abort=True)
         clear_directory(config.publish_path)
         compile_wiki(config.repo_path, config.publish_path)
+        world_readablize(config.publish_path)
     except ClickException:
         raise
     except Abort:
@@ -203,6 +204,11 @@ def _preview(preview_path, local_repo_path):
     compile_wiki(local_repo_path, preview_path)
     click.echo('Your wiki preview is ready! navigate to ~{}/wiki'.format(
         os.environ.get('LOGNAME')))
+
+def world_readablize(path: str) -> None:
+    """Given a path to a directory, recursively make it world readable."""
+    # TODO the correct way to do this is with a wiki group
+    subprocess.run(['chmod', '-R', 'o+w', path], check=True)
 
 def clear_directory(path:str) -> None:
     """Given a path to a directory, deletes everything in it. Use with
