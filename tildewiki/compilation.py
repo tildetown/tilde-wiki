@@ -1,7 +1,7 @@
 import os
 import re
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Callable
 
 from markdown import markdown
 
@@ -9,6 +9,8 @@ DOUBLE_NEWLINE_RE = re.compile(r'\n\n', flags=re.MULTILINE|re.DOTALL)
 HEADER_TITLE_RE = re.compile(r'<h([12])>(.*?)</h\1>')
 TITLE_RE = re.compile(r'<title>.*?</title>')
 LINK_RE = re.compile(r'href="\/wiki')
+
+DEFAULT_ON_CREATE = lambda _: None
 
 def relativize_links(content:str, depth:int) -> str:
     """Given compiled html content, change URLs that start in "/wiki" to be
@@ -18,7 +20,9 @@ def relativize_links(content:str, depth:int) -> str:
     repl = 'href="{}'.format(os.path.join(dots, 'wiki'))
     return re.sub(LINK_RE, repl, content)
 
-def compile_wiki(source_path: str, dest_path: str) -> None:
+def compile_wiki(source_path: str,
+                 dest_path: str,
+                 on_create: Callable[[str], None]=DEFAULT_ON_CREATE) -> None:
     """Given a source path (presumably a git repository) and a destination
     path, compiles the files found in {source_path}/articles and compiles them all
     to {dest_path}/.
@@ -26,6 +30,9 @@ def compile_wiki(source_path: str, dest_path: str) -> None:
     THIS FUNCTION CLEARS {dest_path}/!
 
     Be absolutely sure you know what you are doing when you call this ^_^
+
+    If passed, on_create will be called per directory and file created by the
+    compiler. The default is to take no action.
     """
     last_compiled = '<p><em>last compiled: {}</em></p>'.format(datetime.utcnow())
 
@@ -46,7 +53,9 @@ def compile_wiki(source_path: str, dest_path: str) -> None:
         dest_root = os.path.join(dest_path, current_suffix)
 
         for directory in dirs:
-            os.mkdir(os.path.join(dest_root, directory))
+            dir_path = os.path.join(dest_root, directory)
+            os.mkdir(dir_path)
+            on_create(dir_path)
 
         for source_filename in files:
             if source_filename.startswith('.'):
@@ -61,13 +70,18 @@ def compile_wiki(source_path: str, dest_path: str) -> None:
             toc_content += '<li><a href="{}">{}</a></li>\n'.format(
                 os.path.join(current_suffix, dest_filename),
                 os.path.join(current_suffix,dest_filename.split('.')[0]))
-            with open(os.path.join(dest_root, dest_filename), 'w') as f:
+            final_path = os.path.join(dest_root, dest_filename)
+            with open(final_path, 'w') as f:
                 f.write(output)
+            on_create(final_path)
+
 
     toc_content += '\n</ul>'
-    with open(os.path.join(dest_path, 'toc.html'), 'w') as f:
+    toc_path = os.path.join(dest_path, 'toc.html')
+    with open(toc_path, 'w') as f:
         f.write(toc_content)
         f.write(footer_content)
+    on_create(toc_path)
 
 def slurp(file_path:str) -> str:
     """Convenience function for reading a file and returning its contents."""
@@ -87,7 +101,7 @@ def compile_source_file(source_file_path:str, header_content:str, footer_content
         raise ValueError(
             '{} is not an absolute path.'.format(source_file_path))
 
-    compiler = None
+    # pick a compiler
     if source_file_path.endswith('.md'):
         compiler = compile_markdown
     elif source_file_path.endswith('.txt'):
@@ -120,17 +134,17 @@ def extract_title(content:str) -> Optional[str]:
         return matches.groups()[1]
     return None
 
-def compile_markdown(source_file_path:str) -> str:
+def compile_markdown(file_path:str) -> str:
     """Given a string of markdown, compiles it and returns the result."""
     return markdown(
-        slurp(source_file_path),
+        slurp(file_path),
         output_format='html5')
 
-def compile_plaintext(source_file_path:str) -> str:
+def compile_plaintext(file_path:str) -> str:
     output = '<p>\n'
     output += re.sub(
         DOUBLE_NEWLINE_RE,
         '</p><p>',
-        slurp(source_file_path))
+        slurp(file_path))
     output += '\n</p>\n'
     return output

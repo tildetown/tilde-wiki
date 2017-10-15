@@ -1,7 +1,7 @@
 import os
 import re
+import stat
 from os.path import expanduser
-import subprocess
 
 import click
 from click import ClickException, Abort
@@ -119,6 +119,19 @@ def preview(config, preview_path, local_repo_path):
     clear_directory(preview_path)
     _preview(preview_path, local_repo_path)
 
+def _on_create(file_path: str) -> None:
+    """This callback takes a path to a file or directory created on disk
+    during compilation. We want to make sure that everything we create as part
+    of publish compilation is world-writable so the next user can overwrite
+    it."""
+    flags = stat.S_ISGID
+    flags |= stat.S_IWOTH | stat.S_IROTH
+    flags |= stat.S_IRUSR | stat.S_IWUSR
+    flags |= stat.S_IRGRP | stat.S_IWGRP
+    if os.path.isdir(file_path):
+        flags |= stat.S_IXOTH | stat.S_IXGRP | stat.S_IXUSR
+    os.chmod(file_path, flags)
+
 @main.command()
 @click.option('--local-repo-path', default=LOCAL_REPOSITORY_PATH,
               help='Path to local clone of wiki repository.', type=WikiRepo(**DEFAULT_PATH_KWARGS))
@@ -144,8 +157,7 @@ def publish(config, local_repo_path):
         click.echo('Compiling wiki to {}'.format(config.publish_path))
         click.confirm(WIPE_PROMPT.format(config.publish_path), abort=True)
         clear_directory(config.publish_path)
-        compile_wiki(config.repo_path, config.publish_path)
-        world_readablize(config.publish_path)
+        compile_wiki(config.repo_path, config.publish_path, on_create=_on_create)
     except ClickException:
         raise
     except Abort:
@@ -204,11 +216,6 @@ def _preview(preview_path, local_repo_path):
     compile_wiki(local_repo_path, preview_path)
     click.echo('Your wiki preview is ready! navigate to ~{}/wiki'.format(
         os.environ.get('LOGNAME')))
-
-def world_readablize(path: str) -> None:
-    """Given a path to a directory, recursively make it world readable."""
-    # TODO the correct way to do this is with a wiki group
-    subprocess.run(['chmod', '-R', 'o+w', path], check=True)
 
 def clear_directory(path:str) -> None:
     """Given a path to a directory, deletes everything in it. Use with
