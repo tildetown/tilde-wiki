@@ -1,6 +1,6 @@
 import os
-import re
 import stat
+import subprocess
 from os.path import expanduser
 
 import click
