@@ -143,7 +143,6 @@ def publish(config, local_repo_path):
         raise ClickException('The wiki lock file already exists. Seems like someone else is compiling.')
 
     rm_error_paths = []
-    onerror = lambda f,p,e: rm_error_paths.append(p)
     error = None
     lockf = open(LOCK_PATH, 'w')
     try:
