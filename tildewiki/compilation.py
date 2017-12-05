@@ -3,7 +3,7 @@ import re
 from datetime import datetime
 from typing import Optional, Callable
 
-from markdown import markdown
+from markdown import markdown, extensions
 
 DOUBLE_NEWLINE_RE = re.compile(r'\n\n', flags=re.MULTILINE|re.DOTALL)
 HEADER_TITLE_RE = re.compile(r'<h([12])>(.*?)</h\1>')
@@ -138,7 +138,7 @@ def compile_markdown(file_path:str) -> str:
     """Given a string of markdown, compiles it and returns the result."""
     return markdown(
         slurp(file_path),
-        extensions=[markdown.extensions.fenced_code],
+        extensions=[extensions.fenced_code],
         output_format='html5')
 
 def compile_plaintext(file_path:str) -> str:
