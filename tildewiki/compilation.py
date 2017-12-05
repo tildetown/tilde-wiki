@@ -138,6 +138,7 @@ def compile_markdown(file_path:str) -> str:
     """Given a string of markdown, compiles it and returns the result."""
     return markdown(
         slurp(file_path),
+        extensions=[markdown.extensions.fenced_code],
         output_format='html5')
 
 def compile_plaintext(file_path:str) -> str:
