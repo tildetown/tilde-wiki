@@ -10,6 +10,7 @@ DOUBLE_NEWLINE_RE = re.compile(r'\n\n', flags=re.MULTILINE|re.DOTALL)
 HEADER_TITLE_RE = re.compile(r'<h([12])>(.*?)</h\1>')
 TITLE_RE = re.compile(r'<title>.*?</title>')
 LINK_RE = re.compile(r'href="\/wiki')
+SRC_RE = re.compile(r'src="\/wiki')
 
 DEFAULT_ON_CREATE = lambda _: None
 
@@ -18,8 +19,10 @@ def relativize_links(content:str, depth:int) -> str:
     relative instead of absolute. Depth indicates how many pairs of dots we
     should use to traverse upward."""
     dots = os.path.join(*['..' for _ in range(depth)])
-    repl = 'href="{}'.format(os.path.join(dots, 'wiki'))
-    return re.sub(LINK_RE, repl, content)
+    href_repl = 'href="{}'.format(os.path.join(dots, 'wiki'))
+    src_repl = 'src="{}'.format(os.path.join(dots, 'wiki'))
+    out = re.sub(LINK_RE, href_repl, content)
+    return re.sub(SRC_RE, src_repl, out)
 
 def compile_wiki(source_path: str,
                  dest_path: str,
@@ -35,7 +38,7 @@ def compile_wiki(source_path: str,
     If passed, on_create will be called per directory and file created by the
     compiler. The default is to take no action.
     """
-    last_compiled = '<p><em>last compiled: {}</em></p>'.format(datetime.utcnow())
+    last_compiled = '<hr><p><em>last compiled: {}</em></p>'.format(datetime.utcnow())
 
     header_content = compile_markdown(os.path.join(source_path, 'src/header.md'))
     footer_content = last_compiled + compile_markdown(os.path.join(source_path, 'src/footer.md'))
@@ -85,7 +88,7 @@ def compile_wiki(source_path: str,
     toc_content += '\n</ul>'
     toc_path = os.path.join(dest_path, 'toc.html')
     with open(toc_path, 'w') as f:
-        f.write(toc_content)
+        f.write(relativize_links(toc_content, 1))
         f.write(footer_content)
     on_create(toc_path)
 
