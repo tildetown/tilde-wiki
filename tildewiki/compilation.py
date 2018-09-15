@@ -1,6 +1,7 @@
 import os
 import re
 from datetime import datetime
+from shutil import copy
 from typing import Optional, Callable
 
 from markdown import markdown
@@ -38,10 +39,15 @@ def compile_wiki(source_path: str,
 
     header_content = compile_markdown(os.path.join(source_path, 'src/header.md'))
     footer_content = last_compiled + compile_markdown(os.path.join(source_path, 'src/footer.md'))
+    logo_path = 'src/logo.png'
+    css_path = 'src/main.css'
 
     articles_root = os.path.join(source_path, 'src/articles')
 
     toc_content = '{}\n<ul>'.format(update_title(header_content, 'table of contents'))
+
+    copy(logo_path, dest_path)
+    copy(css_path, dest_path)
 
     depth = 0
     for source_root, dirs, files in os.walk(articles_root):
