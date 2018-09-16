@@ -24,6 +24,19 @@ def relativize_links(content:str, depth:int) -> str:
     out = re.sub(LINK_RE, href_repl, content)
     return re.sub(SRC_RE, src_repl, out)
 
+def depth_from(root: str, path: str) -> int:
+    """Given a root path and a path below it, returns how many levels below
+    the root the path is."""
+    if root == path:
+      return 1
+    relpath = os.path.relpath(path, root)
+    first = os.path.split(relpath)[0]
+    depth = 2
+    while first != '':
+      depth += 1
+      first = os.path.split(first)[0]
+    return depth
+
 def compile_wiki(source_path: str,
                  dest_path: str,
                  on_create: Callable[[str], None]=DEFAULT_ON_CREATE) -> None:
@@ -52,9 +65,8 @@ def compile_wiki(source_path: str,
     copy(logo_path, dest_path)
     copy(css_path, dest_path)
 
-    depth = 0
     for source_root, dirs, files in os.walk(articles_root):
-        depth += 1
+        depth = depth_from(articles_root, source_root)
         current_suffix = source_root.replace(articles_root, '')
         if current_suffix and current_suffix[0] == '/':
             current_suffix = current_suffix[1:]
