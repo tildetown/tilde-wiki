@@ -19,7 +19,7 @@ setup(
     install_requires = ['Markdown==2.6.9',
                         'GitPython==2.1.5',
                         'click==6.7',
-                        'pygit2==0.24.1'], # matches current libgit2-dev version in ubuntu LTS
+                        'pygit2==0.27.1'], # matches current libgit2-dev version in ubuntu LTS
     entry_points = {
           'console_scripts': [
               'wiki = tildewiki.main:main'
