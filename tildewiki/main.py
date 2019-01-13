@@ -17,7 +17,7 @@ SITE_NAME = 'tilde.town'
 PUBLISH_PATH = '/var/www/{site_name}/wiki'.format(site_name=SITE_NAME)
 PREVIEW_PATH = expanduser('~/public_html/wiki')
 LOCAL_REPOSITORY_PATH = expanduser('~/wiki')
-REPOSITORY_PATH = '/wiki'
+REPOSITORY_PATH = '/town/wiki'
 WIPE_PROMPT = 'This will wipe everything at {}. Proceed?'
 LOCK_PATH = '/tmp/tildewiki.lock'
 
